@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: phone_shop_piseth
+      POSTGRES_USER: phone_shop_piseth
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U phone_shop_piseth -d phone_shop_piseth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  phone-shop:
+    build: .
+    image: phone-shop:local
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/phone_shop_piseth
+      SPRING_DATASOURCE_USERNAME: phone_shop_piseth
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
